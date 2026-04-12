@@ -111,7 +111,7 @@ evaluation_items = [
 answer_key = [item["answer"] for item in evaluation_items]
 
 
-def grade_predictions(questions, predicted_answers, model_name="gpt-5-nano"):
+def grade_predictions(questions, predicted_answers, model_name="gpt-5-mini"):
     def normalize_for_match(text: str) -> str:
         text = (text or "").replace("\u00a0", " ")
         text = re.sub(r"\s+", " ", text).strip()
@@ -152,7 +152,7 @@ def grade_predictions(questions, predicted_answers, model_name="gpt-5-nano"):
 
 채점 기준:
 - 정답 문자열을 형식까지 정확히 맞추면 1점
-- 의미가 맞더라도 정답 뒤에 설명, 조사, 접미어(예: "입니다"), 불릿, 번호, 줄바꿈이 붙으면 0점
+- 의미가 맞더라도 정답 뒤에 설명, 조사, 접미어(예: "입니다"), 불릿, 번호, 줄바꿈이 붙으면 감점
 - 숫자, 날짜, 코드, URL, "없는 정보" 같은 답은 정확해야 한다
 - 예측 답변이 정확히 "없는 정보"인데 정답이 존재하면 반드시 0점이다
 - 답에 여러 요소가 필요한 문항은 주요 요소를 모두 맞혀야 1점이다
