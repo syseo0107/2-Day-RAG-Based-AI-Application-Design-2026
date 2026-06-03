@@ -164,6 +164,9 @@ def grade_predictions(questions, predicted_answers, model_name="gpt-5-mini"):
 2번: 0.5점 (설명)
 3번: 0점 (설명)
 
+질문-답변 리스트에 적힌 문항번호를 그대로 사용한다.
+문항번호를 1번부터 다시 매기지 않는다.
+
 질문-답변 리스트:
 {qa_pairs}
 """
@@ -171,6 +174,7 @@ def grade_predictions(questions, predicted_answers, model_name="gpt-5-mini"):
 
     forced_results = {}
     qa_rows = []
+    pending_numbers = set()
 
     for idx in range(len(questions)):
         predicted = predicted_answers[idx]
@@ -199,22 +203,41 @@ def grade_predictions(questions, predicted_answers, model_name="gpt-5-mini"):
             continue
 
         qa_rows.append(
-            f"{number}. 질문: {questions[idx]}\n예측: {predicted}\n정답: {answer}"
+            f"문항번호: {number}번\n질문: {questions[idx]}\n예측: {predicted}\n정답: {answer}"
         )
+        pending_numbers.add(number)
 
     llm_result = ""
     if qa_rows:
-        llm = ChatOpenAI(model=model_name, temperature=0)
+        llm = ChatOpenAI(model=model_name)
         parser = StrOutputParser()
         grading_chain = grading_prompt | llm | parser
         llm_result = grading_chain.invoke({"qa_pairs": "\n".join(qa_rows)})
 
+    score_line_pattern = re.compile(
+        r"(\d+)번\s*[:：]\s*(1(?:\.0)?|0(?:\.5|\.0)?)\s*점\s*(.*)"
+    )
     for line in llm_result.splitlines():
         stripped = line.strip()
         if not stripped:
             continue
-        prefix = stripped.split("번:", 1)[0]
-        if prefix.isdigit():
-            forced_results[int(prefix)] = stripped
+        match = score_line_pattern.search(stripped.replace("*", ""))
+        if match:
+            number = int(match.group(1))
+            if number not in pending_numbers:
+                continue
+            score = f"{float(match.group(2)):g}"
+            explanation = match.group(3).strip()
+            if explanation and not explanation.startswith("("):
+                explanation = f"(설명: {explanation})"
+            if not explanation:
+                explanation = "(설명: 자동 채점)"
+            forced_results[number] = f"{number}번: {score}점 {explanation}"
 
-    return "\n".join(forced_results[idx] for idx in sorted(forced_results))
+    for number in range(1, len(questions) + 1):
+        if number not in forced_results:
+            forced_results[number] = (
+                f"{number}번: 0점 (설명: 자동 채점 결과를 확인하지 못해 0점 처리)"
+            )
+
+    return "\n".join(forced_results[idx] for idx in range(1, len(questions) + 1))
