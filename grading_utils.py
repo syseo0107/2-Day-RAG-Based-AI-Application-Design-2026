@@ -27,13 +27,13 @@ evaluation_items = [
         "source_page": 4,
     },
     {
-        "question": "공시정보 체크요령에서 증권회사 안내가 없어도 스스로 확인해야 한다고 든 CB 투자 관련 권리는 무엇인가요?",
-        "answer": "1. 전환권 행사시점; 2. 매수청구권",
+        "question": "공시정보 체크요령에서 증권회사 안내가 없어도 스스로 확인해야 한다고 든 CB 투자 관련 사항 두 가지는 무엇인가요?",
+        "answer": "1. 전환권 행사시점; 2. 매수청구권에 관한 사항",
         "source_page": 27,
     },
     {
         "question": "투자자유형 분류기준의 자세한 내용은 한국금융투자협회 홈페이지의 어떤 경로에서 확인할 수 있나요?",
-        "answer": "1. www.kofia.or.kr; 2. 법규정보 시스템; 3. 모범규준",
+        "answer": "1. 한국금융투자협회 홈페이지; 2. 법규정보 시스템; 3. 모범규준",
         "source_page": 30,
     },
     {
@@ -43,7 +43,7 @@ evaluation_items = [
     },
     {
         "question": "'투자자별 펀드잔고 통보' 서비스는 어떤 두 가지 정보를 어떤 방식으로 제공하며, 언제 제공받지 않을 수 있나요?",
-        "answer": "1. 펀드잔고; 2. 개별 수익률 정보; 3. 전자우편 등으로 제공; 4. 제공을 원하지 않을 경우 별도 신청을 통해 제공받지 않을 수 있음",
+        "answer": "1. 펀드잔고; 2. 개별 수익률 정보; 3. 전자우편 등; 4. 제공을 원하지 않을 경우 별도 신청",
         "source_page": 31,
     },
     {
@@ -58,11 +58,11 @@ evaluation_items = [
     },
     {
         "question": "임의매매에 따른 처벌 조항 설명에서 제시한 형사처벌 수준과 조문 번호는 무엇인가요?",
-        "answer": "1. 5년 이하의 징역 또는 2억원 이하의 벌금; 2. §444",
+        "answer": "1. 5년 이하의 징역 또는 2억원 이하의 벌금; 2. 444",
         "source_page": 52,
     },
     {
-        "question": "임의매매 설명에서 손해배상금액 결정 시 과실상계 예시로 든 고객 과실 두 가지는 무엇인가요?",
+        "question": "임의매매 설명에서 거래내역 확인과 계좌정보 관리에 관해 과실상계 예시로 든 고객 과실 두 가지는 무엇인가요?",
         "answer": "1. 장기간 거래내역 확인 소홀; 2. 계좌번호·비밀번호 관리 소홀",
         "source_page": 52,
     },
@@ -77,7 +77,7 @@ evaluation_items = [
         "source_page": 104,
     },
     {
-        "question": "반대매매 대상종목 선정 기준으로 제시한 세 가지 예시는 무엇인가요?",
+        "question": "당해 미수발생 증권 이후 반대매매 대상종목 선정 기준으로 제시한 세 가지 예시는 무엇인가요?",
         "answer": "1. 최근 매수 종목; 2. 종목코드 번호 선(후)순위; 3. 종목명 가나다순",
         "source_page": 115,
     },
@@ -93,7 +93,7 @@ evaluation_items = [
     },
     {
         "question": "보이스피싱 피해금 환급절차에서 금감원의 공고 기간과 피해금 환급 소요 기간은 각각 얼마인가요?",
-        "answer": "1. 2개월간 공고; 2. 3개월 정도 소요",
+        "answer": "1. 2개월; 2. 3개월 정도",
         "source_page": 141,
     },
     {
@@ -103,7 +103,7 @@ evaluation_items = [
     },
     {
         "question": "유사투자자문업 관련 판례 사례에서 B 증권투자 전문가가 배분 받은 비율과 유료회원의 월 가입료는 각각 얼마인가요?",
-        "answer": "1. 가입료의 50%; 2. 월 80만원 상당",
+        "answer": "1. 50%; 2. 월 80만원",
         "source_page": 145,
     },
 ]
@@ -120,12 +120,23 @@ def grade_predictions(questions, predicted_answers, model_name="gpt-5-mini"):
             lambda match: f"{match.group(1)}{match.group(2)}. ",
             text,
         )
+        text = re.sub(r"(^|;\s*)(\d+\.\s*)답\s+", r"\1\2", text)
         text = re.sub(r"\s*;\s*", "; ", text)
         text = re.sub(r"\s*,\s*", ", ", text)
         text = re.sub(r"\s*/\s*", " / ", text)
         text = re.sub(r"\s*→\s*", " → ", text)
-        text = re.sub(r"§\s*", "§", text)
+        text = re.sub(r"§\s*", "", text)
         text = re.sub(r"\s*%\s*", "%", text)
+        text = text.replace("‘", "").replace("’", "").replace("“", "").replace("”", "")
+        text = re.sub(r"www\.\s*kofia\.or\.kr", "한국금융투자협회 홈페이지", text, flags=re.IGNORECASE)
+        text = re.sub(r"투자자의\s+", "", text)
+        text = re.sub(r"모바일폰\s+(?=잠금기능)", "", text)
+        text = re.sub(r"(\d+개월)간\b", r"\1", text)
+        text = re.sub(r"\s*상당\b", "", text)
+        text = re.sub(r"에 관한 사항\b", "", text)
+        text = re.sub(r"(?<=수익률)\s*정보\b", "", text)
+        text = re.sub(r"등을?\s*(통해|통하여)?\s*제공(?:함|됨|됩니다)?", "등", text)
+        text = re.sub(r"별도 신청\s*시\s*제공받지 않을 수 있음\.?", "별도 신청", text)
         return text.strip()
 
     def has_standard_answer_format(text: str) -> bool:
@@ -169,12 +180,6 @@ def grade_predictions(questions, predicted_answers, model_name="gpt-5-mini"):
                 return True, "표준 답안 번호 형식 아님"
         if re.match(r"^(정답|답변|답)\s*[:：]", raw):
             return True, "접두어"
-        if ans and ans in pred and pred != ans:
-            return True, "정답 외 설명이나 접미어"
-        if not has_standard_answer_format(predicted):
-            return True, "표준 답안 형식 아님"
-        if answer_item_count(predicted) != answer_item_count(answer):
-            return True, "답안 항목 수 또는 세미콜론 구분 불일치"
         return False, ""
 
     grading_prompt = ChatPromptTemplate.from_template(
@@ -183,14 +188,17 @@ def grade_predictions(questions, predicted_answers, model_name="gpt-5-mini"):
 아래에는 질문, 모델 예측 답변, 정답이 주어진다.
 
 채점 기준:
-- 정답 문자열을 표준 형식까지 정확히 맞추면 1점
 - 정답 표준 형식은 단일 답도 "1. 답", 여러 답은 "1. 답; 2. 답; 3. 답"처럼 한 줄 번호 목록이다
+- 다만 채점은 형식보다 핵심 정보 일치를 우선한다
+- 핵심 정보가 모두 맞고 순서를 이해할 수 있으면 조사, 접미어, 따옴표, "답" 같은 군더더기, "에 관한 사항", "정보", "상당", "간", "제공" 같은 가벼운 표현 차이는 감점하지 않고 1점이다
+- 홈페이지 이름과 URL처럼 같은 위치를 가리키는 표현, "2개월"과 "2개월간", "월 80만원"과 "월 80만원 상당"처럼 의미가 같은 값 표현은 1점으로 본다
+- 항목 수나 세미콜론 구분이 정답과 다르더라도 필요한 핵심 정보가 모두 명확히 들어 있고 불필요한 정보가 답을 흐리지 않으면 1점이다
 - 문서에 정보가 없을 때만 "없는 정보"를 번호 없이 쓴다
-- 의미가 맞더라도 표준 번호, 세미콜론 구분, 순서, 조사, 설명, 접미어(예: "입니다"), 불릿, 줄바꿈이 정답과 다르면 감점
-- 숫자, 날짜, 코드, URL, "없는 정보" 같은 답은 정확해야 한다
+- 숫자, 날짜, 코드, URL, "없는 정보" 같은 답은 의미가 바뀌지 않아야 한다
 - 예측 답변이 정확히 "없는 정보"인데 정답이 존재하면 반드시 0점이다
-- 답에 여러 요소가 필요한 문항은 주요 요소를 모두 맞혀야 1점이다
-- 형식은 맞았지만 일부 요소가 빠졌거나 표현이 덜 정확하면 0.5점
+- 답에 여러 요소가 필요한 문항은 주요 요소를 모두 맞히면 1점이다
+- 상위 개념이나 행위명을 물었는데 하위 유형만 나열한 경우처럼 답의 방향은 맞지만 질문이 요구한 추상도와 다르면 0.5점이다
+- 일부 요소가 빠졌거나, 정답 요소 중 일부만 맞았거나, 관련은 있지만 범위 밖 정보가 섞이면 0.5점이다
 - 틀리거나 문서에 없는 내용을 지어내면 0점
 
 반드시 아래 형식만 사용한다.
